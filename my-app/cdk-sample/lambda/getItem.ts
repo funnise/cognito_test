@@ -1,13 +1,14 @@
 import { Handler } from "aws-lambda"
 const https = require('https');
 const AWS = require("aws-sdk");
+var uuid = require('uuid');
 const db = new AWS.DynamoDB.DocumentClient();
-let url = "https://docs.aws.amazon.com/lambda/latest/dg/welcome.html"   
+let url = "https://docs.aws.amazon.com/lambda/latest/dg/welcome.html"
 const TABLE_NAME = process.env.TABLE_NAME || "";
 const PRIMARY_KEY = process.env.PRIMARY_KEY || "";
 
 export const handler = async (event: any = {}, context: any): Promise<any> => {
- 
+
   const RESPONSE_HEADERS = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
@@ -23,10 +24,37 @@ export const handler = async (event: any = {}, context: any): Promise<any> => {
         body: `Error: You are missing the path parameter id`,
       };
     }*/
-  return { 
-    statusCode: 200, 
-    body: JSON.stringify(event),
-  headers: RESPONSE_HEADERS, 
+
+
+  try {
+    console.log(uuid.v4())
+    const response = await db.post({
+      TableName: TABLE_NAME,
+      Item: {
+        [PRIMARY_KEY]: '1234',
+        price: 500,
+        name: 'name'
+      }
+    }).promise().catch((err: Error) => {
+      console.log(`catch err: ${err}`);
+      throw err
+    });
+    console.log('promise');
+    return {
+      statusCode: 200,
+      body: JSON.stringify(event),
+      headers: RESPONSE_HEADERS,
+    }
+  } catch (dbError) {
+    console.log('err');
+    console.log(JSON.stringify(dbError))
+    return {
+      statusCode: 500,
+      body: JSON.stringify(dbError),
+      headers: RESPONSE_HEADERS,
+    };
+  }
+
 };
   /*
   try {
@@ -44,4 +72,4 @@ export const handler = async (event: any = {}, context: any): Promise<any> => {
     } catch (dbError) {
       return { statusCode: 500, body: JSON.stringify(dbError) };
   }*/
-};
+;
